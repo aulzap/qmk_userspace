@@ -1,5 +1,8 @@
 #include QMK_KEYBOARD_H
 
+#include "action_layer.h"
+#include "process_keycode/process_tap_dance.h"
+
 enum charybdis_keymap_layers {
     LAYER_BASE = 0,
     LAYER_NUM_A,
@@ -26,11 +29,44 @@ static uint16_t auto_pointer_layer_timer = 0;
 #endif     // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 
 
-// #define LOWER MO(1)
-// #define RAISE MO(2)
-// #define POINTER MO(3)
-// #define PT_Z LT(POINTER, KC_Z)
-// #define PT_SLSH LT(POINTER, KC_SLSH)
+enum custom_keycodes {
+    TD_MY_MACRO = SAFE_RANGE,
+    CK_AA,
+    // other custom keycodes...
+};
+
+enum { TD_OE, TD_AE, TD_AA };
+
+static inline void send_unicode_hex(const char *hex) {
+    register_code(KC_LCTL);
+    register_code(KC_LSFT);
+    tap_code(KC_U);
+    unregister_code(KC_LSFT);
+    unregister_code(KC_LCTL);
+    SEND_STRING(hex);
+    tap_code(KC_ENTER);
+}
+
+// Specific letters (lower/upper)
+static inline void send_oe(bool upper) { send_unicode_hex(upper ? "00D8" : "00F8"); } // Ø/ø
+static inline void send_ae(bool upper) { send_unicode_hex(upper ? "00C6" : "00E6"); } // Æ/æ
+static inline void send_aa(bool upper) { send_unicode_hex(upper ? "00C5" : "00E5"); } // Å/å
+
+void td_oe_finished(tap_dance_state_t *state, void *user_data) {
+    send_oe(state->count >= 2);
+}
+void td_ae_finished(tap_dance_state_t *state, void *user_data) {
+    send_ae(state->count >= 2);
+}
+void td_aa_finished(tap_dance_state_t *state, void *user_data) {
+    send_aa(state->count >= 2);
+}
+
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_OE] = ACTION_TAP_DANCE_FN(td_oe_finished),
+    [TD_AE] = ACTION_TAP_DANCE_FN(td_ae_finished),
+    [TD_AA] = ACTION_TAP_DANCE_FN(td_aa_finished),
+};
 
 #define HRM_A MT(MOD_LCTL,KC_A)
 #define HRM_S MT(MOD_LSFT,KC_S)
@@ -62,9 +98,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [LAYER_NUM_A] = LAYOUT(
   // ╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
-       KC_TRNS,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_TRNS,
+       KC_TRNS,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    TD(TD_AA),
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
-       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_PGUP, KC_HOME,     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_TRNS, KC_TRNS,
+       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_PGUP, KC_HOME,     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, TD(TD_OE), TD(TD_AE),
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
        KC_TRNS,  KC_GRV,  KC_QUOT, KC_ESC,  KC_PGDN, KC_END,      KC_EQL,  KC_MINS, KC_LBRC, KC_RBRC, KC_BSLS, KC_TRNS,
   // ╰──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────╯
@@ -74,9 +110,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [LAYER_NUM_B] = LAYOUT(
   // ╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
-       KC_TRNS,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_NO,
+       KC_TRNS,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    TD(TD_AA),
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
-       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_PGUP, KC_HOME,     KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO,
+       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_PGUP, KC_HOME,     KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TD(TD_OE), TD(TD_AE),
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
        KC_TRNS,  KC_GRV,  KC_QUOT, KC_ESC,  KC_PGDN, KC_END,      KC_EQL,  KC_MINS, KC_LBRC, KC_RBRC, KC_BSLS, KC_NO,
   // ╰──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────╯
@@ -86,11 +122,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [LAYER_POINTER] = LAYOUT(
   // ╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
-       KC_NO,    S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5),    S(KC_6), S(KC_7), S(KC_8), S(KC_9), S(KC_0), QK_BOOT, //KC_TRNS,
+       KC_NO,    S(KC_1), S(KC_2), S(KC_3), S(KC_4), S(KC_5),    S(KC_6), S(KC_7), S(KC_8), S(KC_9), S(KC_0), KC_TRNS,
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
        DRG_TOG, KC_NO,  KC_NO,   KC_NO,   KC_NO,   S_D_MOD,     DPI_MOD, DPI_RMOD, S_D_MOD, S_D_RMOD, KC_TRNS, KC_TRNS,
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
-       KC_NO,    KC_TRNS, SNIPING, DRGSCRL, KC_NO, KC_NO,      DRGSCRL, KC_NO, SNIPING, DRGSCRL, KC_TRNS, KC_NO,
+       KC_NO,    KC_TRNS, SNIPING, DRGSCRL, KC_NO, KC_NO,      DRGSCRL, KC_NO, SNIPING, DRGSCRL, KC_TRNS, QK_BOOT,
   // ╰──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────╯
                                   KC_MS_BTN2, KC_MS_BTN1, KC_MS_BTN3,        KC_MS_BTN3, KC_MS_BTN1
   //                            ╰───────────────────────────╯               ╰──────────────────╯
@@ -137,3 +173,43 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 // Forward-declare this helper function since it is defined in rgb_matrix.c.
 void rgb_matrix_update_pwm_buffers(void);
 #endif
+
+// bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+//     switch (keycode) {
+//         case TD_MY_MACRO:
+//         case CK_AA:
+//             if (record->event.pressed) {
+//                 // when keycode QMKBEST is pressed
+//                 SEND_STRING("QMK is the best thing ever!");
+//             } else {
+//                 // when keycode QMKBEST is released
+//             }
+//             return false;
+            
+//     }
+//     return true;
+// };
+
+// bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+//     switch (keycode) {
+//         case TD_MY_MACRO:
+//             if (record->event.pressed) {
+//                 // register_code(KC_LCTL);
+//                 // wait_ms(500);
+//                 // register_code(KC_LSFT);
+//                 // wait_ms(500);
+//                 // tap_code(KC_U);
+//                 // wait_ms(500);
+//                 // unregister_code(KC_LSFT);
+//                 // wait_ms(500);
+//                 // unregister_code(KC_LCTL);
+//                 wait_ms(500);
+//                 SEND_STRING("f8");
+//                 wait_ms(500);
+//                 // tap_code(KC_ENTER);
+//                 // wait_ms(500);
+//             }
+//             return false;
+//     }
+//     return true;
+// }
