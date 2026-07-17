@@ -28,7 +28,6 @@ static uint16_t auto_pointer_layer_timer = 0;
 #    endif // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_THRESHOLD
 #endif     // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 
-
 enum custom_keycodes {
     TD_MY_MACRO = SAFE_RANGE,
     CK_AA,
@@ -40,17 +39,26 @@ enum { TD_OE, TD_AE, TD_AA };
 static inline void send_unicode_hex(const char *hex) {
     register_code(KC_LCTL);
     register_code(KC_LSFT);
+    wait_ms(10);
     tap_code(KC_U);
     unregister_code(KC_LSFT);
     unregister_code(KC_LCTL);
+    wait_ms(20);
     SEND_STRING(hex);
-    tap_code(KC_ENTER);
+    wait_ms(20);
+    tap_code(KC_SPC);
 }
 
 // Specific letters (lower/upper)
-static inline void send_oe(bool upper) { send_unicode_hex(upper ? "00D8" : "00F8"); } // Ø/ø
-static inline void send_ae(bool upper) { send_unicode_hex(upper ? "00C6" : "00E6"); } // Æ/æ
-static inline void send_aa(bool upper) { send_unicode_hex(upper ? "00C5" : "00E5"); } // Å/å
+static inline void send_oe(bool upper) {
+    send_unicode_hex(upper ? "00d8" : "00f8");
+} // Ø/ø
+static inline void send_ae(bool upper) {
+    send_unicode_hex(upper ? "00c6" : "00e6");
+} // Æ/æ
+static inline void send_aa(bool upper) {
+    send_unicode_hex(upper ? "00c5" : "00e5");
+} // Å/å
 
 void td_oe_finished(tap_dance_state_t *state, void *user_data) {
     send_oe(state->count >= 2);
@@ -68,19 +76,17 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_AA] = ACTION_TAP_DANCE_FN(td_aa_finished),
 };
 
-#define HRM_A MT(MOD_LCTL,KC_A)
-#define HRM_S MT(MOD_LSFT,KC_S)
-#define HRM_D MT(MOD_LGUI,KC_D)
-#define HRM_F LT( LAYER_NUM_A, KC_F)
-#define HRM_G LT( LAYER_POINTER, KC_G)
+#define HRM_A MT(MOD_LCTL, KC_A)
+#define HRM_S MT(MOD_LSFT, KC_S)
+#define HRM_D MT(MOD_LGUI, KC_D)
+#define HRM_F LT(LAYER_NUM_A, KC_F)
+#define HRM_G LT(LAYER_POINTER, KC_G)
 
-
-#define HRM_SCLN MT(MOD_LCTL,KC_SCLN)
-#define HRM_L MT(MOD_RSFT,KC_L)
-#define HRM_K MT(MOD_RGUI,KC_K)
-#define HRM_J LT(LAYER_NUM_B ,KC_J)
+#define HRM_SCLN MT(MOD_LCTL, KC_SCLN)
+#define HRM_L MT(MOD_RSFT, KC_L)
+#define HRM_K MT(MOD_RGUI, KC_K)
+#define HRM_J LT(LAYER_NUM_B, KC_J)
 #define HRM_H LT(LAYER_POINTER, KC_H)
-
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -185,7 +191,7 @@ void rgb_matrix_update_pwm_buffers(void);
 //                 // when keycode QMKBEST is released
 //             }
 //             return false;
-            
+
 //     }
 //     return true;
 // };
